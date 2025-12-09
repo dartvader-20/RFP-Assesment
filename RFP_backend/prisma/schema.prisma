@@ -1,0 +1,108 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum RFPStatus {
+  OPEN        // RFP is open for vendor proposals
+  CLOSED      // RFP is closed for new proposals
+  IN_REVIEW   // Proposals are being reviewed
+}
+
+
+model RFP {
+  rfpId        Int      @id @default(autoincrement())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  title        String?
+  description  String?
+  structured   Json?
+  budget       Float?
+  deliveryDays Int?
+  userId       Int?
+  isDeleted    Boolean  @default(false)
+  status       RFPStatus @default(OPEN)
+  finalVendorId Int?
+  
+  proposals    Proposal[]
+  chatMessages RFPChatMessage[]
+}
+
+enum VendorType {
+  IT
+  FURNITURE
+  OFFICE_SUPPLIES
+  EQUIPMENT
+  LOGISTICS
+  OTHER
+}
+
+model Vendor {
+  vendorId       Int         @id @default(autoincrement())
+  name           String
+  email          String
+  vendorType     VendorType
+  contactNumber  String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  isDeleted      Boolean     @default(false)
+
+  proposals      Proposal[]
+}
+
+enum ProposalStatus {
+  PENDING
+  RECEIVED
+  UNDER_REVIEW
+  SELECTED
+  REJECTED
+}
+
+model Proposal {
+  proposalId Int             @id @default(autoincrement())
+  rfpId      Int
+  vendorId   Int
+  trackingId   String? 
+  status     ProposalStatus  @default(PENDING)
+
+  rawEmail   String?
+  structured Json?
+  score      Float?
+
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  isDeleted  Boolean         @default(false)
+
+  rfp        RFP             @relation(fields: [rfpId], references: [rfpId])
+  vendor     Vendor          @relation(fields: [vendorId], references: [vendorId])
+
+  messages   ProposalMessage[]
+}
+
+model ProposalMessage {
+  messageId     Int      @id @default(autoincrement())
+  proposalId    Int
+
+  sender        String   // "VENDOR", "BUYER", "SYSTEM"
+  rawMessage    String?  // raw email text or user message
+  structured    Json?    // parsed JSON of quotation or message
+  attachmentUrl String?  // PDF, images, attachments
+
+  createdAt     DateTime @default(now())
+
+  proposal      Proposal @relation(fields: [proposalId], references: [proposalId])
+}
+
+model RFPChatMessage {
+  messageId        Int      @id @default(autoincrement())
+  rfpId            Int
+  userMessage      String?
+  assistantMessage String?
+  createdAt        DateTime @default(now())
+
+  rfp              RFP      @relation(fields: [rfpId], references: [rfpId])
+}
