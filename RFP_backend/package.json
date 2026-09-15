@@ -30,7 +30,7 @@
     "pdf-parse": "^2.4.5",
     "pdfkit": "^0.17.2",
     "prisma": "^4.15.0",
-    "sharp": "^0.34.5"
+    "sharp": "^0.35.4"
   },
   "devDependencies": {
     "ts-node": "^10.9.2",
